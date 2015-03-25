@@ -1,0 +1,59 @@
+%intro
+The pixel-nearest-neighbor (PNN) method is suitable for incremental reconstruction as each incoming b-scan can be processed and put into the volume. Since pixel-based methods work forward, only the voxels affected by a b-scan are processed. In contrast, voxel-based methods work backwards, and all voxels must be processed for each increment of the reconstruction.
+
+In this section, we describe how to perform incremental PNN reconstruction utilizing the GPU for parallel processing. In the incremental algorithm, not all steps benefit from being offloaded to the GPU, and the distribution between CPU and GPU is covered here. Although PNN is suitable for incremental reconstruction, the hole-filling stage introduces difficulties when trying to maintain high performance. This will also be explained, and some possible solutions are presented.
+
+\subsection{Method and Parallelization}
+% description of each step:
+	% for each b-scan and tracking data:
+		% fill pixel_ill and pixel_pos (CPU)
+		% transfer pos_matrix, b-scan, pixel_ill and pixel_pos to GPU
+		% transform pixel_pos (GPU)
+		% convert pixel_pos to voxel indices (GPU)
+		% fill volume in device memory (GPU)
+		% transfer pixel_pos to CPU
+		% fill volume in CPU memory (CPU)
+% for each step, why on CPU/GPU
+% before three last steps, epxlain why reconstruct volume on GPU and CPU instead of transferring
+
+The method used for incremental PNN is similar to ordinary non-incremental PNN. This is why PNN was chosen for a simple incremental reconstruction method. For each increment, we assume that a b-scan and its interpolated and calibrated tracking transformation matrix has been acquired as described in the previous section. The steps are then as follows:
+
+\begin{itemize}
+	\item For each acquired b-scan and associated tracking data:
+	\begin{enumerate}
+		\item Fill $pixelill$ and $pixelpos$ (on CPU)
+		\item Transfer b-scan, tracking data, $pixelill$ and $pixelpos$ to GPU
+		\item Transform $pixelpos$ (on GPU)
+		\item Convert $pixelpos$ to voxel indices (on GPU)
+		\item Fill device memory volume (on GPU)
+		\item Transfer $pixelpos$ to CPU
+		\item Fill CPU memory volume (on CPU)
+	\end{enumerate}
+\end{itemize}
+
+The main steps are the same as in the non-incremental version: fill $pixelill$ and $pixelpos$, transform, convert to voxel indices and fill the volume. However, in the incremental version some steps previously done on the GPU are now performed on the CPU, and in addition we maintain a duplicate volume on the CPU in addition to the GPU. The reason behind these differences will be explained below.
+
+In step 1, the mask is used to fill $pixelill$ with pixel intensities and $pixelpos$ with untransformed coordinates, just like with non-incremental PNN, but this step is now performed on the CPU. The reason for this is that while it is straightforward to divide the work into one b-scan per thread, it is harder to divide the work of a single b-scan. As mentioned in Section \ref{section:non-incremental_pnn}, parallelizing the sequential code requires each thread to know where in the buffer to write the data if a pixel in the ROI is found. This could be performed with an atomic update of a global variable identifying the next position to write to, but the overhead of maintaining and waiting for this variable overshadows the benefits of parallelizing the task. This operation is fairly trivial, and takes negligible time when only processing a single b-scan. So although an atomic counter or other scheme for parallelizing this might achieve the same effect, the simplest solution is to perform this sequentially on the CPU and then transfer the results (of negligible size for single b-scan) to the device.
+
+In contrast to step 1, transforming the coordinates in step 3 is a computationally heavy task and is best suited for the GPU, and the implementation is straight forward with $m$ threads (one for each pixel in the ROI). A typical mask has around 100 000 pixels, which is more than enough to occupy the compute units on a modern GPU. Again the same approach is used in step 4 where we parallelize using one thread per pixel in the ROI. As the data is already on the device memory, it is logical to perform this step on the GPU.
+
+In non-incremental reconstruction, if the volume is not solely used for visualization on the GPU, it is transferred from device to host when the reconstruction is complete. To do the same incrementally would be a performance bottleneck as tens of megabytes of data would be transferred for each increment of the reconstruction. To reduce the bandwidth used, we transfer only the processed $pixelpos$ from device to host, and use the $pixelill$ (from step 1) that already exists on the host to fill a volume duplicate on CPU memory. This incrementally updated volume can be used in any third-party application. If the volume is only used for visualization on the GPU, then the two last steps may be omitted. It is also possible to visualize the volume on the GPU during reconstruction, and then transfer the whole volume to the CPU only at the end of the reconstruction session.
+
+\subsection{Incremental Pixel-Based Hole Filling}
+% about the difficulties with incremental PNN hole filling
+% suggestion(s) for how to do this with pros and cons
+%	transfer entire volume each increment
+%	splatting
+%	have holes on CPU and fill only on GPU, then transfer at end of session
+%	transferring filled holes to host (predetermined)
+
+
+It should be highlighted that hole filling is omitted in the method presented in the last section. In the non-incremental version, hole-filling can be performed after all b-scans have been inserted into the volume. This is a computationally heavy task if performed for each increment for the entire volume. In addition, transferring the entire volume with filled holes is unacceptable if real-time performance should be maintained. Thus, there are two problems to be solved: the first is how to find and fill holes incrementally without processing the entire volume each increment, and the second is how to incrementally maintain a reconstructed volume on the host without transferring the entire volume each time. We present possible schemes to solve this.
+
+The first method is to use some sort of "splatting" technique where each pixel contributes to voxels in a "splat" around its nearest neighbor. The splats can be spherical in nature and decrease in intensity as distance to the center increases. If sphere diameter is greater or equal to the maximum separation between two b-scans, no holes will occur. To implement this in the GPU-based PNN reconstruction, the splats are filled on the CPU and GPU volumes in step 5 and 7. The disadvantages are increased computation time (on CPU and GPU) spent on filling splats and blurring of the output volume.
+
+Another approach is to use the parallel processing power of the GPU to fill holes on device memory volume, but not to transfer any additional hole-filling information to the host. The GPU volume will then have filled holes while the CPU volume will not, and it (the GPU volume) can be used for intermediate visualization where holes are not critical. At the end of the session, the entire hole-free volume can be transferred to host. Although bandwidth is saved in this approach, full hole filling is time consuming when performed on each increment, even on the GPU.
+
+% TODO: This should be explained much better, using much more text and some illustrations:
+
+It should not be necessary to search for holes in the entire volume for each increment. Holes may occur when two b-scans are more than $\Delta v$ from each other when inserted in the volume, and no other b-scans occur between them. This can be exploited by searching for holes in an area close to each inserted b-scan. Assuming no holes wider than $q$ voxels, we can search each inserted b-scan for holes in the $q \times m$ voxels immediately next to the voxels filled by the b-scan. In this way, a much smaller subset of the volume is searched, and we always know the upper limit of how many holes are filled on each increment. The $q \times m$ voxels intensities can be transferred to host in addition to $pixelpos$. The locations of the voxels where holes are filled can be set to the opposite direction of the current probe trajectory, and can thus be calculated from $pixelpos$ and the tracking data without transferring more coordinates to the host.

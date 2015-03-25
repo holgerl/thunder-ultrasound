@@ -1,0 +1,68 @@
+% intro/motivation
+
+As the result of the work done in this thesis, some major topics can be discussed in general. Here, we discuss the differences between pixel-based and voxel-based reconstruction, and compare incremental and non-incremental reconstruction. These approaches have their own challenges and advantages, and from the experience gained in this thesis we address these.
+
+% advantages/disadvantages of pixel-based vs voxel-based
+	% pixel-based easier to understand and implement
+	% pixel-based is intuitively better for incremental reconstruction
+	% pixel-based can have holes (and while filling the volue is pixel-based, filling the holes is voxel-based (so if doing that work anyways, why not do all voxel-based))
+	% pixel-based have read-write conflicts in volume
+	% voxel-based generally offer better quality (reasoning: reconstruction is really a resampling problem from oriented b-scans to rectangular grid of voxels)
+	
+\subsection{Pixel-Based \textit{vs.}\ Voxel-Based Reconstruction}
+
+	Although both pixel-based and voxel-based reconstruction have the same goal, to reconstruct the volume according to given input, they are fundamentally different. Pixel-based methods tend to be easier to understand and implement, as there is a natural path from input to output. This also makes them intuitively superior for incremental reconstruction, where the input needs to be processed one slice at a time into the volume, and additionally we want to avoid processing the entire volume for each new increment.
+	
+	But simple pixel-based methods such as PNN have a main disadvantage of leaving holes in the volume. Although these can be filled using averaging or interpolation methods, doing so is inherently a voxel-based task: for each voxel with a hole, it must be filled with a suitable value. If such a step is to be performed anyway, one can argue that the whole process should be streamlined as voxel- based in the first place.
+	
+	Another disadvantage of pixel-based methods is that read-write conflicts can occur in the volume when processing in parallel. When a pixel is used to update one or more of the volume voxels, they may already have a value that should be accumulated with the chosen compounding method. Race conditions can occur in such cases where pixels are updating the same voxel(s). If complex pixel-based methods are used, such as splatting a sphere around each pixel, then even more conflicts will occur. Although atomic operations on the voxels would solve this, it would introduce a potentially heavy performance penalty if there were many conflicts (as neighboring pixels are prone to have).
+	
+	In general, voxel-based methods can offer high quality in the reconstructed volume. One can reason for this by claiming that given accurate tracking, reconstruction is fundamentally a resampling problem: There exists a set of data points in space defined by the oriented b-scans, and the task is to resample them onto a rectangular grid of voxels.
+	
+	Another issue where pixel-based and voxel-based methods differ is how they scale with increased problem sizes. 
+	%, such as number of voxels and number of b-scans. This will be covered in Section \ref{section:scaling_resource}.
+	In the case of reconstruction, the problem size is determined by many parameters. The most salient are:
+	
+	\begin{itemize}
+		\item $n =$ number of b-scans
+		\item $B =$ size of b-scans
+		\item $V =$ size of volume
+		\item $K =$ size of hole fill kernel
+	\end{itemize}
+	
+	In addition, there are algorithm specific parameters such as number of b-scans taken into account for each voxel in DWOP and the values of performance-linked cutoff limits. For simplicity, we choose to ignore such parameters. Using big-O notation, PNN has the complexity 
+	
+	\begin{equation}
+		O(nB + VK)
+	\end{equation}
+	
+	where the first part is due to each of $B$ pixels of the $n$ b-scans being processed. The last part is due to the hole filling. VNN on the other hand has the complexity
+	
+	\begin{equation}
+		O(Vn)
+	\end{equation}
+	
+	which is due to taking the $n$ b-scan into account for each of the $V$ voxels. From the functions, it is clear that both PNN and VNN are dependent on the volume size and the number of b-scans, which are the two parameters most likely to vary significantly. However, the PNN has a complexity based on a sum of these two parameters, while with VNN it is a product.
+	
+% advantages/disadvantages of incremental vs non-incremental
+	% do not know how big volume will be (solution is to assume)
+	% cannot take future scans into account (solution is sliding window)
+	% (?) cannot update whole volume (solution is to update between incoming scans)
+	% memory transfers  (incl explaining trick of different rate of reconstruction and DtoH transfer of volume
+	% advantages of incremental reconstruction? (can rescan and visualize and bla bla)
+\subsection{Incremental \textit{vs.}\ Non-Incremental Reconstruction}
+
+	%From this discussion, it would appear that incremental reconstruction only has disadvantages, but one has to remember that the primary motivation
+	The motivation for doing reconstruction incrementally is the ability to perform \emph{real-time} reconstruction, thus allowing the user to get instant feedback on the freehand ultrasound scanning, and if desirable, to rescan interesting areas or adjust settings early if the original result was not satisfactory. However, independent of the specific reconstruction method used, there are some challenges introduced when doing the reconstruction incrementally as opposed to a bulk-operation with all the data ready.
+
+	\subsubsection{Unknown Volume Extents}
+	
+	One problem is that the extents of the volume is not known in beforehand. Even though the location of the first incoming b-scan can be used to assume the \emph{location} of the volume in space, its final \emph{size} in the three dimensions is unknown. It might also be the case that a specific \emph{orientation} of the volume would allow better utilization of the space, e.g.\ if the scans fit better into a volume rotated 45 degrees. The quick fix is to assume a certain size and orientation from the start, and allocate memory for the volume given these assumptions. Data outside these extents will then be ignored. It would be possible to dynamically allocate memory as the volume grows, but such a scheme would be complex and may reduce performance. In the non-incremental case, however, the input data can be first analyzed to figure out a suitable volume size that covers all the data.
+	
+	\subsubsection{Scope of Available Data}
+	
+	Another advantage with non-incremental approaches is that they can take \emph{all} the b-scans into account for the reconstruction. By using all available information, the reconstruction should be closer to the actual ground truth. Incremental methods, however, only know the \emph{past} data, and not the future. The means to overcome this, as described in the previous chapter, is to build up a buffer of incoming data before the reconstruction begins, and then update the volume with this queue of b-scan data. In this way, both the past and some of the future b-scans can be taken into account. The delay introduced by this approach to the real-time reconstruction is negligible given a high rate of incoming data.
+	
+	\subsubsection{Data Transfer Bottleneck}
+	
+	As the volume is reconstructed incrementally on the GPU, it is also a challenge to keep an updated volume in host memory. In the non-incremental case, such a transfer need only be performed once at the end of the reconstruction. Doing this at each increment introduces much overhead, especially if the reconstruction procedure is computationally easy and the transfer time dominates the processing time. However, while reconstruction must be performed once per incoming b-scan to be real-time, the host memory volume need not be updated at the same rate. If the volume in device memory is used for the visualization, a difference in update rates will not be immediately noticed by the user.

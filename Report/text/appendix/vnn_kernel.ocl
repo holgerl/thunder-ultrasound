@@ -1,0 +1,92 @@
+#define _distance(v, plane) (plane.x*v.x + plane.y*v.y + plane.z*v.z + plane.w)/sqrt(plane.x*plane.x + plane.y*plane.y + plane.z*plane.z)
+#define plane_points_c(n,i) (plane_points[(n)*3 + (i)])
+
+__kernel void vnn(__global unsigned char * bscans0,
+                  __global unsigned char * bscans1,
+                  __global unsigned char * mask,
+                  int bscan_w,
+                  int bscan_h,
+                  int bscan_n,
+                  float bscan_spacing_x,
+                  float bscan_spacing_y,
+                  __global unsigned char * volume,
+                  int volume_n,
+                  int volume_h,
+                  int volume_w,
+                  float volume_spacing,
+                  __global float4 * plane_eq,
+                  __global float4 * plane_points
+                  ) {
+  int id = get_global_id(0);
+
+  int z = id/volume_w;
+  int x = id%volume_w;
+  if (z >= volume_n) return;
+  if (x >= volume_w) return;
+
+  #define kernel_radius (volume_spacing*5)
+  
+  int current_bscan = -1;
+  float dist = 10000; 
+  for (int n = 0; n < bscan_n; n++) {
+    float4 voxel_000 = {x*volume_spacing, 0.0f, z*volume_spacing, 0.0f};
+    float temp = fabs(_distance(voxel_000, plane_eq[n]));
+    if (temp < dist) {
+      current_bscan = n;
+      dist = temp;
+    }
+  }
+
+  int print_counter = 0;
+
+  for (int y = 0; y < volume_h; y++) {
+    float4 voxel_coord = {x*volume_spacing, y*volume_spacing, z*volume_spacing, 0.0f};
+    dist = 10000; 
+    float temp;
+    int done_up = 0;
+    int done_down = 0;
+    int min_bscan = current_bscan;
+    int n;
+    for (int i = 1; !done_down || !done_up; i++) {
+      if (!done_up) {
+        n = current_bscan + i;
+        temp = fabs(_distance(voxel_coord, plane_eq[n]));
+        min_bscan = temp < dist ? n : min_bscan;
+        dist = min(dist, temp);
+        done_up = temp-dist > kernel_radius || n >= bscan_n-1;
+      }
+
+      if (!done_down) {
+        n = current_bscan - i;
+        temp = fabs(_distance(voxel_coord, plane_eq[n]));
+        min_bscan = temp < dist ? n : min_bscan;
+        dist = min(dist, temp);
+        done_down = temp-dist > kernel_radius || n <= 0;
+      }
+    }
+    current_bscan = min_bscan;
+    dist = _distance(voxel_coord, plane_eq[current_bscan]);
+
+    float4 normal = {plane_eq[current_bscan].x, plane_eq[current_bscan].y, plane_eq[current_bscan].z, 0.0f};
+    float4 corner0 = plane_points_c(current_bscan,0);
+    float4 cornerx = plane_points_c(current_bscan,1);
+    float4 cornery = plane_points_c(current_bscan,2);
+
+    float4 p = voxel_coord + -dist*normal - corner0;
+    float4 x_vector = normalize(cornerx - corner0);
+    float4 y_vector = normalize(cornery - corner0);
+
+    int px = dot(p, x_vector)/bscan_spacing_x;
+    int py = dot(p, y_vector)/bscan_spacing_y;
+
+    if (px >= 0 && px < bscan_w && py >= 0 && py < bscan_h)
+      if (fabs(dist) < kernel_radius)
+        
+        if (mask[px + py*bscan_w] != 0)
+          if (current_bscan < bscan_n/2) {
+            volume_a(x,y,z) = bscans0[px + py*bscan_w + current_bscan*bscan_w*bscan_h];
+          } else {
+            volume_a(x,y,z) = bscans1[px + py*bscan_w + (current_bscan-bscan_n/2)*bscan_w*bscan_h];
+          }
+  }
+}

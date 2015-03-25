@@ -1,0 +1,15 @@
+% Repeat the most important numerical results
+% Conclude performance and quality discussions
+% Note strengths and weaknesses of using GPU for reconstruction
+% ? Mention strengths and weaknesses of my method(s)?
+% ? Unnumbered subsection for non-incremental and incremental?
+
+Our work resulted in \emph{Thunder}, a software implementation of the developed techniques. This system included fast reconstruction with the VNN (voxel-nearest-neighbor) and PNN (pixel-nearest-neighbor) methods, and real-time incremental high-quality reconstruction by distance weighted orthogonal projections or based on the probe trajectory. Furthermore, the reconstructing volume could be visualized in real-time by orthogonal MPR slices (planar slices through the volume) or volume ray casting on the GPU.
+
+By utilizing the GPU, a speedup of up to 50 was achieved by VNN on the new Fermi architecture by Nvidia. PNN obtained 14 times, and the incremental methods got between 6 and 8 times the performance compared to a pure CPU implementation. This meant that the reconstruction of non-incremental PNN and VNN volumes was performed in only 0.9 and 0.6 seconds, and the incremental methods achieved times of 3.3 seconds (incremental PNN), 24.7 seconds (DWOP of 4 scans), 34.5 seconds (DWOP of 8 scans) and 26.1 seconds (PT).
+
+As for quality, the PT method demonstrated the best results, especially when handling sparse input. While the parallel nature of ultrasound reconstruction has proved suitable for the GPU, incremental reconstruction was limited by the overhead associated with data transfer between device and host for each increment.
+
+% Closing statements (move to final thoughts)
+
+%In all aspects, the results show that 3D reconstruction of freehand ultrasound is indeed possible to perform in fractions of a second using our methods on the GPU. Furthermore, incremental reconstruction can be performed in real-time with simultaneous visualization. The techniques presented in this thesis should prove to benefit all who want to utilize the massive parallelism and computation power of the GPU for ultrasound reconstruction.

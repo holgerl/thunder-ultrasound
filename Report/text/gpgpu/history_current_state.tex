@@ -1,0 +1,34 @@
+GPU technology was developed for graphics processing in computer games for the purpose of offloading calculations involved in 2D and 3D graphics from the CPU. Early GPUs were fixed hardware accelerators specialized to perform the most common graphical operations. Graphical applications have the tendency to involve the same computations on different data, thus the GPU employs massive hardware parallelism for the computations. As an example, consider the task of rotating an object in 2D graphical applications \cite{hearn2004}. Each point $\bb{P}_i$ is rotated into $\bb{S}_i$:
+
+	\begin{equation}
+		\bb{S}_i = \bb{R} \cdot \bb{P}_i
+		\label{eq:rotation_transform}
+	\end{equation}
+	
+	where \bb{R} is a $2 \times 2$ rotation matrix and the same for all points. Each rotated point $\bb{S}_i$ can be evaluated individually in parallel. With e.g.\ thousands of points, this can reduce computation time drastically compared to evaluating them one by one after each other. Fixed function GPUs have since evolved into programmable units with the same parallel architecture, but where the parallel operations can be programmed for each stage of the graphics pipeline. Although meant for graphics processing such as 3D shading, these programmable GPUs have started to be used for general purpose computations. Applications that have a natural affinity for the GPU architecture involve executing similar calculations on thousands, if not millions, of data elements. GPU manufacturers such as Nvidia and AMD have recognized this potential in their products, and have released GPGPU frameworks such as Nvidia's CUDA (Compute Unified Device Architecture) \cite{kirk2010, cudaprogguide} and AMD's ATI Stream technology \cite{streamreleasenotes}.
+	
+\subsubsection{Current state of GPGPU}
+
+	 Many examples of utilizing the GPU for general purpose computations exist. In the field of medical ultrasound, Nielsen \cite{nielsen2007} uses the GPU for image enhancement of ultrasound through the wavelet transform. Another example is Herikstad \cite{herikstad2009}, who estimates and corrects aberration in ultrasound scans on the GPU.
+
+	The third generation of Nvidia GPUs targeting GPGPU computing are based on the GF100 architecture. The GF100 is used in Nvidia products such as the GeForce GTX470 for computer games and Tesla C2050 for high performance computing. AMD's competing GPU generation is the HD5000 series, which is used in products such as HD5870. Specifications for the C2050 and HD5870 series are given in Table \ref{table:c2050hd5870}. The Nvidia Quadro FX5800, which is similar to the Nvidia Tesla C1060 from Nvidia's second GPU generation is included for comparison and since it is also used for test measurements in this thesis. Note that memory bandwidth and performance are highly theoretical figures stated by the manufactorers \cite{c2050, fx5800, hd5870}.
+	
+	\begin{table}[h]
+	\centering
+	\begin{tabular}{| l l l l |}
+		\hline
+		\textbf{GPU} & \textbf{C2050 \cite{c2050}} & \textbf{FX5800 \cite{fx5800}} & \textbf{HD5870 \cite{hd5870}} \\
+		\textbf{\# of cores} & 448 & 240 & 320\footnotemark[1] \\
+		\textbf{Clock frequency} & 1150 MHz & 1296 MHz & 850 MHz \\
+		\textbf{Memory} & 3 GB & 4 GB & 1 GB  \\
+		\textbf{Theoretical} & & & \\
+		\textbf{memory bandwidth} & 144 GB/s & 102 GB/s & 153 GB/s \\
+		\textbf{Theoretical} & & & \\
+		\textbf{performance} & 1030 GFLOP/s & 933 GFLOP/s & 2720 GFLOP/s \\
+		\hline
+	\end{tabular}
+	\caption[Nvidia C2050, FX5800 and AMD HD5870 specifications]{Nvidia C2050, FX5800 and AMD HD5870 specifications}
+	\label{table:c2050hd5870} % this table is referred to in section Test Setup in results-discussion chapter and in list of abbreviations
+	\end{table}
+	
+	\footnotetext[1]{HD5870 has 320 \emph{stream cores} with a total of 1600 \emph{processing elements}}

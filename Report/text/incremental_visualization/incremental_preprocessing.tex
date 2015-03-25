@@ -1,0 +1,41 @@
+% Polling interface and retrieval algorithm
+% Interpolating to match timetag and then calibration
+
+When reconstructing incrementally, a method is needed for acquiring the b-scans from the ultrasound device (typically from a frame-grabber card) and the tracking data from the tracking system. This thesis does not focus on what goes on behind the scenes before this data is available in the computer's memory, but we define a simple interface that is assumed can be implemented by the ultrasound and tracking systems:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{| p{0.4\textwidth} p{0.5\textwidth} |}
+	\hline
+	\multicolumn{1}{|c}{\textbf{Call}} & \multicolumn{1}{c|}{\textbf{Effect}} \\
+	\hline
+	\hline
+	\texttt{get\_last\_b-scan(timetag, b-scan)} & returns most recent b-scan and associated timetag \\
+	\texttt{get\_last\_tracking(timetag, matrix)} & returns most recent tracking data in form of transformation matrix and associated timetag \\
+	\texttt{poll\_b-scan} / \texttt{poll\_tracking} & returns true (once) when new b-scan/tracking data is ready, and false at each call after that until another b-scan/tracking data is ready \\
+	\texttt{end\_of\_data} & returns true if there are no more b-scans \emph{or} no more tracking data to be expected (i.e. system turned off), false otherwise \\
+	\hline
+\end{tabular}
+\caption{Interface against ultrasound and tracking system}
+\label{table:ultrasound_interface}
+\end{table}
+
+Given this interface, the following algorithm is used for acquiring and processing the input data incrementally:
+
+\begin{itemize}
+	\item loop:
+	\begin{enumerate}
+		\item b-scan = NULL
+		\item matrix = NULL
+		\item while (matrix or b-scan is NULL)
+		\begin{enumerate}
+			\item if (\texttt{poll\_b-scan}) \texttt{get\_last\_b-scan(timetag\_b, b-scan)}
+			\item if (\texttt{poll\_tracking}) \texttt{get\_last\_tracking(timetag\_m, matrix)}
+		\end{enumerate}
+		\item if (\texttt{end\_of\_data}) break loop
+		\item interpolate tracking data and calibrate
+		\item perform reconstruction increment
+	\end{enumerate}
+\end{itemize}
+
+The reason for doing it in this fashion is that the rate of b-scan generation is not the same as the rate of incoming tracking data. After the while-loop in the algorithm has been completed, there has been acquired a b-scan and tracking data, but the tracking data is either from before or after the b-scan. As in the non-incremental method, we choose to interpolate the transformation matrix according to the given timetags. This, together with the calibration, make up the preprocessing of the input data. After this step, one increment of the reconstruction can be performed.

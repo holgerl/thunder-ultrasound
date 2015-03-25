@@ -1,0 +1,104 @@
+__kernel void build_ray_dirs(__global unsigned char * volume,
+                             int volume_w,
+                             int volume_h,
+                             int volume_n,
+                             __global float4 * ray_dirs,
+                             int bitmap_w,
+                             int bitmap_h,
+                             float4 camera_pos,
+                             float4 camera_lookat,
+                             __global float * printings) {
+  int n = get_global_id(0);
+  if (n >= bitmap_w*bitmap_h) return;
+
+  int ray_x = n%bitmap_w;
+  int ray_y = n/bitmap_w;
+  
+  float4 camera_forward = normalize(camera_lookat - camera_pos);
+  float4 temp_up = {0, 1, 0, 0};
+  float4 camera_right = normalize(cross(temp_up, camera_forward));
+  float4 camera_up = normalize(cross(camera_right, camera_forward));
+
+  float fov_hor = 45/2;
+  float fov_ver = fov_hor*bitmap_h/(float)bitmap_w;
+  fov_hor = fov_hor/180.0f*3.14f;
+  fov_ver = fov_ver/180.0f*3.14f;
+  
+  float4 step_forward = camera_forward;
+  float temp = (ray_x-bitmap_w/2)/(float)(bitmap_w/2);
+  float4 step_right = temp * fov_hor * camera_right;
+  temp = (ray_y-bitmap_h/2)/(float)(bitmap_h/2);
+  float4 step_up = temp * fov_ver * camera_up;
+  float4 ray_dir = normalize(step_forward + step_right + step_up);
+  
+  ray_dirs[n] = ray_dir;
+}
+
+__kernel void cast_rays(__global unsigned char * volume,
+                        int volume_w,
+                        int volume_h,
+                        int volume_n,
+                        __global float4 * ray_dirs,
+                        __global unsigned char * bitmap,
+                        int bitmap_w,
+                        int bitmap_h,
+                        float4 camera_pos,
+                        float4 camera_lookat,
+                        __global float * printings) {
+  int n = get_global_id(0);
+  if (n >= bitmap_w*bitmap_h) return;
+
+  int ray_x = n%bitmap_w;
+  int ray_y = n/bitmap_w;
+  
+  float4 ray_dir = ray_dirs[n];
+
+  #define step_size 1.0f
+  #define transparent_level 54
+  #define transparency_ajustment 0.4f
+  #define ray_strength_cutoff (255/10.0f)
+
+  unsigned char accum = 0;
+  float t = 0;
+  
+  float4 volume_0 = {0, 0, 0, 0};
+  float4 volume_1 = {volume_w-1, volume_h-1, volume_n-1, 0};
+
+  float4 foo0 = (volume_0 - camera_pos)/ray_dir;
+  float4 foo1 = (volume_1 - camera_pos)/ray_dir;
+  foo0 = min(foo0, foo1);
+  t = max(foo0.x, max(foo0.y, foo0.z)) + 2;
+
+  float4 t_pos = camera_pos + t*ray_dir;
+
+  if (t_pos.x > 0 && t_pos.x < volume_w-1 &&
+      t_pos.y > 0 && t_pos.y < volume_h-1 &&
+      t_pos.z > 0 && t_pos.z < volume_n-1) {
+    float ray_strength = 255;
+    unsigned char voxel;
+    float transparency;
+    while(true) {
+      if (t_pos.x < 0 || t_pos.x > volume_w-1 ||
+          t_pos.y < 0 || t_pos.y > volume_h-1 ||
+          t_pos.z < 0 || t_pos.z > volume_n-1) {
+        break;        
+      }
+      if (ray_strength < ray_strength_cutoff) break;
+
+      voxel = volume_a((int)t_pos.x, (int)t_pos.y, (int)t_pos.z);
+      if (voxel < transparent_level) voxel = 0;
+
+      transparency = min((1 - voxel/255.0f) + transparency_ajustment, 1.0f);
+      
+      accum += ray_strength * (1-transparency);
+      ray_strength *= transparency;
+      
+      t += step_size;
+      t_pos = camera_pos + t*ray_dir;
+    }
+  } else {
+    accum = ((ray_x+ray_y)%2)*150;
+  }
+
+  bitmap[n] = accum; 
+}

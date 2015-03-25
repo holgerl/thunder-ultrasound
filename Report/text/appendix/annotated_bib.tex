@@ -1,0 +1,100 @@
+In this chapter, there is a collection of selected references that are annotated with a brief explanation and summary of results. These references can also be found in the ordinary bibliography above.
+
+%\subsection{Incremental ultrasound reconstruction}
+	
+	%\subsubsection{Incremental Volume Reconstruction and Rendering for 3D Ultrasound Imaging (1992) \cite{ohbuchi1992}}
+	
+		%This paper presents the first attempt at reconstructing and visualizing 3D ultrasound data incrementally while the data is acquired. The implementation was on a simulator of a large-grain MIMD multicomputer, so their results seem to be highly theoretical. 
+		
+	\subsubsection{Stradx: Real-time Acquisition and Visualization of Freehand Three-dimensional Ultrasound \cite{prager1998}}
+	
+		This paper presents the Stradx system, which instead of constructing a 3D volume from ultrasound scans generates MPR slices directly. By doing so, they try to link the acquisition and visualization phases by reducing or eliminating the processing time. Their implementation also exploited graphics acceleration hardware when constructing the slices, although the details are scarce.
+		
+	%\subsubsection{Interactive Three-Dimensional Ultrasound Using a Programmable Multimedia Processor (1998) \cite{edwards1998}}
+	
+		%Does incremental reconstruction on a "multimedia video processor".
+	
+	\subsubsection{Interactive Intra-operative 3D Ultrasound Reconstruction and Visualization \cite{gobbi2002}}
+	
+		This paper presents an implementation of simultaneous real-time 3D ultrasound reconstruction and visualization on the CPU. As in this thesis, the reconstruction occurs while the data is acquired and is done by PNN. In contrast to this thesis, the visualization rendered only three orthogonal slices of the volume, not the volume itself. And the reconstruction is in real-time, but the visualization is only "interactive" at a lower framerate. Furthermore, reconstruction and visualization were both done on a dual (933 MHz Pentium III) CPU. In the paper, they present performance obtained by four pixel-based reconstruction method variants. A 256x193x256 volume was reconstructed from cropped 320x240 b-scans at 12 to 30 scan/s and visualization was updated simultaneously at 5 fps.
+		
+	
+	%\subsubsection{Adaptive Volume Construction from Ultrasound Images of a Human Heart (2003) \cite{reis2003}}
+	
+		%Presents a method for incremental ("adaptive") reconstruction of time-varying b-scans (scanning a beating heart).
+		
+%\subsection{Reconstruction algorithms}
+
+	%\subsubsection{Freehand three-dimensional ultrasound: implementation and applications (1996) \cite{sherebrin1996}}
+	
+		%This paper presents an implementation of VNN.
+		
+	\subsubsection{Three-Dimensional Imaging With Stereotactic Ultrasonography \cite{trobaugh1994}}
+		
+		This paper describes a reconstruction method based on distance weighted orthogonal projections. For each voxel, its distance is calculated to the two surrounding b-scans (if existing), and the pixel values on the projected points are weighted by the distance to give the voxel's value. The authors compare this method to a simple PNN method. Using a Sun SPARCstation 1, they reconstructed a 128x128x50 voxel volume from 256x256 pixel scans at 54 seconds per scan.
+	
+	\subsubsection{3D Freehand Ultrasound Reconstruction Based on Probe Trajectory \cite{coupe2005}}
+	
+		This paper presents a new reconstruction method that improves quality, especially on sparse b-scan input. The method is voxel-based and takes an estimate of the probe trajectory into account when reconstructing. As in \cite{gobbi2002}, the implementation was on a CPU, in this case a single Pentium 4 3.2 GHz with 2GB RAM. The implementation reconstructed a volume of unspecified size from 204 and 222 510x441 b-scans in 111 to 124 and 138 to 149 seconds. As future work, the paper suggests acceleration by GPU, as done in this thesis.
+		
+	\subsubsection{Backward-Warping Ultrasound Reconstruction for Improving Diagnostic Value and Registration \cite{wein2006}}
+	
+		This paper presents a novel voxel-based reconstruction method with better quality/speed properties. The authors used an AMD64 3200+ CPU with 1GB RAM, and reconstructed a 16 and a 134 million voxel volume from 1024 256x256 and 454x454 b-scans in 226 to 942 seconds for "multiple" mode and 119-510 seconds for "single" mode. The authors' goal was obtaining high performance, and their results can be compared to those obtained in this thesis.
+		
+	\subsubsection{Fast Hybrid Freehand Ultrasound Volume Reconstruction \cite{karamalis2009}}
+	
+		This recent paper uses a hybrid between forward and backward reconstruction with the goal of high performance. The hardware used was an Intel Xeon 3.2 GHz with 2GB RAM and a Nvidia GeForce 8800GTX with 768MB RAM. Their implementation reconstructed a 256x256x256 volume from 293 b-scans in 0.35 seconds with simple interpolation and 0.82 seconds with advanced interpolation.
+
+%\subsection{Volume Visualization}
+
+	%\subsubsection{Visualization of 3D ultrasound data (1993) \cite{nelson1993}}
+	
+		%This article describes a simple ray casting algorithm for volume visualization, and also mentions MPR slice visualization.
+		
+		
+%Incremental Volume Reconstruction and Rendering for 3D Ultrasound Imaging (1992) \cite{ohbuchi1992}
+%	First attempt at reconstructing and visualizing 3D ultrasound data incrementally. The implementation was on a simulator of a large-grain MIMD multicomputer, so their results seem to be highly theoretical.
+%Visualization of 3D ultrasound data (1993) \cite{nelson1993}
+%	This article describes a simple ray casting algorithm for volume visualization, and also mentions MPR slice visualization.
+%Three-Dimensional Imaging With Stereotactic Ultrasonography (1994) \cite{trobaugh1994}
+%	Describes how to construct a volume from freehand b-scans tracked by optical positioning system using pixel based and voxel based methods.
+%Freehand three-dimensional ultrasound: implementation and applications (1996) \cite{sherebrin1996}
+%	This paper presents an implementation of VNN.
+%3-D Ultrasound Imaging: A Review (1996) \cite{fenster1996}
+%	Review of approaches in 3D ultrasound imaging. Discusses techniques for acquisition, reconstruction and rendering.
+%Three-Dimensional Freehand Ultrasound: Image Reconstruction and Volume Analysis (1997) \cite{barry1997}
+%	Includes description of a pixel based method with inverse distance kernel around each pixel.
+%Stradx: Real-time Acquisition and Visualization of Freehand Three-dimensional Ultrasound (1998) \cite{prager1998}
+%	The Stradx system. Instead of constructing a 3D volume from ultrasound scans, Stradx generates MPR slices directly from the scans.
+%Interactive Three-Dimensional Ultrasound Using a Programmable Multimedia Processor (1998) \cite{edwards1998}
+%	Does incremental reconstruction on a "multimedia video processor"
+%A Comparison of Freehand Three-Dimensional Ultrasound Reconstruction Techniques (1999) \cite{rohling1999}
+%	Presents a function based reconstruction approach using splines. Also presents different reconstruction algorithms and attempts to group these.
+%A Real-time Freehand 3D Ultrasound System for Image-Guided Surgery (2000) \cite{welch2000}
+%	Presents a system where allow real-time updates to the volume during scanning and also simultaneous visualization with MPR slices and volume rendering
+%A Rayleigh Reconstruction/Interpolation algorithm for 3D Ultrasound (2000) \cite{sanches2000}
+%	Presents a function based approach where the function is estimated from statistical methods
+%Interactive Intra-operative 3D Ultrasound Reconstruction and Visualization (2002) \cite{gobbi2002}
+%	Implementation of simultaneous real-time 3D ultrasound reconstruction and visualization on the CPU. Reconstruction occurs while the data is acquired and is done by PNN. Visualization rendered only three orthogonal slices of the volume, not the volume itself. The reconstruction is in real-time, but the visualization is only "interactive" at a lower framerate.
+%Adaptive Volume Construction from Ultrasound Images of a Human Heart (2003) \cite{reis2003}
+%	Presents a method for incremental ("adaptive") reconstruction of time-varying b-scans (scanning a beating heart).
+%3D Freehand Ultrasound Reconstruction Based on Probe Trajectory (2005) \cite{coupe2005}
+%	Presents a new reconstruction method that improves quality, especially on sparse b-scan input. The method is voxel-based and takes an estimate of the probe trajectory into account when reconstructing.
+%3D Ultrasound Image Reconstruction from Non-Uniform Resolution Freehand Slices (2005) \cite{huang2005}
+%	Uses the Fourier domain during reconstruction to take redundant frequency components into account. This preserves the high frequencies resulting in better resolution.
+%Intra-Operative 3D Ultrasound in Neurosurgery (2005) \cite{unsgaard2005}
+%	Describes applications for 3D ultrasound with focus on neurosurgery.
+%Backward-Warping Ultrasound Reconstruction for Improving Diagnostic Value and Registration (2006) \cite{wein2006}
+%	Presents a novel voxel-based reconstruction method with better quality/speed properties. And describes faste slice selection.
+%Freehand 3D Ultrasound Reconstruction Algorithms: A Review (2007) \cite{solberg2007}
+%	Comprehensive review of reconstruction algorithms. Includes a categorization into voxel based, pixel based and function based methods.
+%Fast Hybrid Freehand Ultrasound Volume Reconstruction (2009) \cite{karamalis2009}
+%	This recent paper uses a hybrid between forward and backward reconstruction with the goal of high performance.
+
+\subsubsection{Visualization in medicine \cite{preim2007}}
+	
+	This a thorough book on visualization with focus on its use in medicine. It describes the various algorithms as well as their clinical applications, and covers acquisition, processing and rendering of medical data in two and three dimensions. Much focus in the book is on volumetric data, as is commonly used in medicine, and all of the important direct and indirect visualization techniques are explained.
+		
+\subsubsection{Freehand 3D Ultrasound Reconstruction Algorithms: A Review \cite{solberg2007}}
+
+	This paper is a comprehensive review of reconstruction algorithms for ultrasound. As a part of this, the algorithms are categorized into three distinct groups: voxel based, pixel based and function based methods. The paper explains implementation of many algorithms and their variants, and focuses on evaluation and comparison of these with regards to their efficiency and effectiveness. As a part of the work, some of the methods have been implemented and tested on a laboratory phantom model, and the results are documented and discussed.

@@ -1,0 +1,159 @@
+% intro/motivation, rough explanation of forward and backward approaches, then outline of section
+There is more than one approach to reconstructing a 3D volume from a series of 2D b-scans. Two main categories of algorithms exist: \emph{pixel-based} and \emph{voxel-based} reconstruction. These are sometimes also called \emph{forward} and \emph{backward} reconstruction, and this section describes the two approaches.
+%A technique for accelerating voxel-based methods, called fast slice selection, is also described.
+The section also describes the basics of geometric transformations in 3D space that are used by these methods.
+
+% about transformation matrices
+\subsection{Geometric Transformations}
+
+	A geometric transformation is an operation on a set of coordinates \cite{eberly2004}. Operations that can be applied include rotation, translation, resizing and skewing. A practical way to represent a transformation on a set of initial coordinates $\bb{P}$, is by a \emph{transformation matrix} $\bb{T}$:
+	
+	\begin{equation}
+		\bb{S} = \bb{T} \cdot \bb{P}
+		\label{eq:transformation}
+	\end{equation}
+	
+	where $\bb{S}$ are the transformed coordinates. To make it possible to represent translation by transformation matrices, we convert $\bb{P}$ to \emph{homogenized coordinates} $\bb{P}'$ by extending it with one dimension with a scalar value of 1. Given that $\bb{P}$ is a vector of $N$ dimensions, then $\bb{P}'$ is of $N+1$ dimensions and $\bb{T}$ is a $(N+1) \times (N+1)$ matrix. The product $\bb{T} \cdot \bb{P}'$ will then give a homogenized $N+1$ vector that can be converted to normal coordinates by dividing each element by the value of the added dimension. Typically as this value is still 1, we can simply omit the last dimension.
+	
+	The identity matrix represent an empty transformation with no effect. The transformations used in this thesis are rotations and translations. Equation \ref{eq:transformation_matrices_0} give a translation matrix and Equations \ref{eq:transformation_matrices_1}, \ref{eq:transformation_matrices_2} and \ref{eq:transformation_matrices_3} give rotation matrices around the x, y and z axis, 
+	
+	\begin{equation}
+		\bb{T}_{translate} =
+		\left[ {\begin{array}{cccc}
+		1 & 0 & 0 & x \\
+		0 & 1 & 0 & y \\
+		0 & 0 & 1 & z \\
+		0 & 0 & 0 & 1 \\
+		\end{array} } \right]
+		\label{eq:transformation_matrices_0}
+	\end{equation}
+	
+	\begin{equation}
+		{\bb{T}_{rotate}}_x =
+		\left[ {\begin{array}{cccc}
+		1 & 0 & 0 & 0 \\
+		0 & \cos{\theta} & -\sin{\theta} & 0 \\
+		0 & \sin{\theta} & \cos{\theta} & 0 \\
+		0 & 0 & 0 & 1 \\
+		\end{array} } \right]
+		\label{eq:transformation_matrices_1}
+	\end{equation}
+	
+	\begin{equation}
+		{\bb{T}_{rotate}}_y =
+		\left[ {\begin{array}{cccc}
+		\cos{\theta} & 0 & \sin{\theta} & 0 \\
+		0 & 1 & 0 & 0 \\
+		-\sin{\theta} & 0 & \cos{\theta} & 0 \\
+		0 & 0 & 0 & 1 \\
+		\end{array} } \right]
+		\label{eq:transformation_matrices_2}
+	\end{equation}
+	
+	\begin{equation}
+		{\bb{T}_{rotate}}_z =
+		\left[ {\begin{array}{cccc}
+		\cos{\theta} & -\sin{\theta} & 0 & 0 \\
+		\sin{\theta} & \cos{\theta} & 0 & 0 \\
+		0 & 0 & 1 & 0 \\
+		0 & 0 & 0 & 1 \\
+		\end{array} } \right]
+		\label{eq:transformation_matrices_3}
+	\end{equation}
+	
+	where $(x, y, z)$ are the translations in the x, y and z dimension and $\theta$ is the rotation angle. Representing combined translation and rotation is simply done by multiplying transformation matrices into one matrix. An example involving a translation and two rotations is given below:
+	
+	\begin{equation}
+		\bb{S} = \bb{T}_{translate} \cdot {\bb{T}_{rotate}}_x \cdot {\bb{T}_{rotate}}_y \cdot \bb{P} = \bb{T}_{combined} \cdot \bb{P}
+		\label{eq:transformation_combination_1}
+	\end{equation}
+	
+	where
+	
+	\begin{equation}
+		\bb{T}_{combined} = \bb{T}_{translate} \cdot {\bb{T}_{rotate}}_x \cdot {\bb{T}_{rotate}}_y
+		\label{eq:transformation_combination_2}
+	\end{equation}
+	
+	The orientation of an ultrasound b-scan can be represented by a transformation matrix that is given by a tracking system (which is the case in this thesis).
+
+% what is the pixel based approach to reconstruction?
+\subsection{Pixel-Based Reconstruction}
+
+	Pixel-based reconstruction, also known as forward reconstruction, iterates over the ultrasound b-scans and attempts to project their values into a volume. The term pixel-based comes from that this approach involves processing each b-scan pixel, and since the b-scans are the input, and the volume is the output this is dubbed as a forward method, as opposed to the voxel-based method described in the next section.
+	
+	For each b-scan $j$ with orientation given by $\bb{T}_j$, each pixel $i$ on the b-scan at location $(x_i, y_i, 0)$ with intensity $c_{j,i}$ has a contribution $V_{i,j}$ to the volume given by:
+	
+	\begin{equation}
+		V_{i,j}(x, y, z) = m(x_i, y_i) w(|(x, y, z) - \bb{T}_j \cdot (x_i, y_i, 0)|) c_{j,i}
+	\end{equation}
+	
+	where $w$ is a weighting function and $m$ is a 2D mask function defining a region-of-interest (ROI) in the b-scan with the value 1 inside the region and 0 outside. The weighting function can be based on the distance between the voxel and the pixel, and examples of such weighting functions include Gaussian bell (Equation \ref{eq:gaussian}) and inverse distance (Equation \ref{eq:inverse}) \cite{gonzalez2008}.
+	
+	\begin{equation}
+		w_{Gaussian}(x) = ae^{-{\frac{(x-b)^2}{2c^2}}}
+		\label{eq:gaussian}
+	\end{equation}
+	
+	\begin{equation}
+		w_{inverse}(x) = \frac{1}{x}
+		\label{eq:inverse}
+	\end{equation}
+	
+	To perform pixel based reconstruction, the following algorithm can be used as basis (based on \cite{solberg2007}):
+	
+	\begin{itemize}
+		\item for each b-scan $j$:
+		\begin{itemize}
+			\item for each pixel $i$ inside mask:
+			\begin{itemize}
+				\item $v =$ the coordinates of the pixel in volume space.
+				\item for each voxel $v'$ in kernel $k$ around $v$:
+				\begin{itemize}
+					\item add to the voxel's value the pixel's value weighted by the weighting function $w$.
+				\end{itemize}
+			\end{itemize}
+		\end{itemize}
+	\end{itemize}
+	
+	A number of variations of this basic algorithm exist. The size of the kernel and the definition of the weighting function can obviously be changed, and the simplest case is to let the pixel contribute to only the closest voxel without any weighting. This is called pixel-nearest-neighbor (PNN).
+	
+	A problem with PNN is that some voxels may never be filled from any pixels, and this is especially a problem when adjacent b-scans are far apart and thus have much space between them. To fix this, a hole-filling stage is required after the PNN volume filling. This can be done by iterating over all unfilled voxels and set them to the average of all filled neighbors in a kernel around them.
+	
+	A consideration needs to be done when filling a voxel with a value, as it might already be filled from another pixel. The scheme chosen is called a \emph{compounding method}. Common compounding methods are:
+	
+	\begin{itemize} 
+		\item overwrite the old value
+		\item overwrite the old value only if the voxel has not yet been filled
+		\item compute an average/median of the values
+		\item keep the maximum value
+	\end{itemize}
+	
+	If overwriting, one can lose data if the new value is erroneous due to noise in tracking data or ultrasound sensoring. Averaging reduces noise, but smudges the volume. Keeping the maximum can be useful to avoid deleting values by overwriting them with empty (i.e. dark, low-intensity) values.
+
+% what is the voxel based approach to reconstruction?
+\subsection{Voxel-Based Reconstruction}
+
+	Voxel-based reconstruction methods iterates over the volume to be reconstructed and for each voxel determines which pixels influence it. This is called a backwards method since it is based on the output (the volume). Some of the principles explained for pixel-based methods also apply in voxel-based methods: Pixels outside the mask should not influence the volume and a compounding method must be chosen.
+	
+	Each voxel is processed to determine which pixels influence it, and how they do it. Several variants of voxel-based reconstruction exist, but the following algorithm can be used as a basis (based on \cite{solberg2007}):
+	
+	\begin{itemize}
+		\item for each voxel $j$:
+		\begin{itemize}
+			\item for each b-scan $i$ that is close to the voxel $j$:
+			\begin{itemize}
+				\item for each pixel $p$ in $i$ that is inside the mask:
+				\begin{itemize}
+					\item add to the voxel's value the pixel's value weighted by the weighting function $w$.
+				\end{itemize}
+			\end{itemize}
+		\end{itemize}
+	\end{itemize}
+	
+	Several variants of voxel-based methods exist. If only the closest pixel to the voxel is used without any weighting, then the method is called voxel-nearest-neighbor (VNN). Since all voxels are traversed in voxel-based reconstruction, no hole-filling is necessary.
+	
+% what is the probe trajectory method?
+%\subsection{Reconstruction Based on Probe Trajectory}
+
+	% Perhaps explain this in the implementation chapter?

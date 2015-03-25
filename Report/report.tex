@@ -1,0 +1,335 @@
+\documentclass[12pt, twoside, a4paper]{book}
+%\usepackage[lmargin=25mm,rmargin=25mm,tmargin=27mm,bmargin=30mm]{geometry}
+%\usepackage{fullpage}
+\usepackage{parskip}
+\usepackage{url}
+\usepackage{rotating}
+\usepackage[strict]{changepage}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{mdwlist}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,filecolor=black,urlcolor=black,pdftitle={Real-time GPU-based 3D Ultrasound Reconstruction and Visualization},pdfauthor={Holger Ludvigsen}]{hyperref}
+\usepackage[final]{pdfpages}
+\usepackage[normal]{caption}
+
+\newcommand{\bb}{\textbf}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\addtolength{\oddsidemargin}{0.03\textwidth}
+\addtolength{\evensidemargin}{-0.03\textwidth}
+\raggedbottom
+
+\title{Real-time GPU-based 3D Ultrasound Reconstruction and Visualization}
+\author{Holger Ludvigsen}
+
+\begin{document}
+
+\renewcommand{\labelitemi}{$\bullet$}
+\renewcommand{\labelitemii}{$\circ$}
+\renewcommand{\labelitemiii}{$\triangleright$}
+\renewcommand{\labelitemiv}{$-$}
+
+\pagestyle{empty}
+
+%\includepdf[pages={1}]{graphics/cover.pdf}
+%\cleardoublepage
+%\includepdf[pages={1}]{graphics/titlepage.pdf}
+%\cleardoublepage
+
+%\chapter*{Problem Description}
+%	\thispagestyle{empty}
+%	\input{text/problem_description}
+%	\cleardoublepage
+	
+\chapter*{Abstract}
+	\changepage{}{1.0cm}{-0.5cm}{-0.5cm}{}{}{}{}{} %\changepage{textheight}{textwidth}{evensidemargin}{oddsidemargin}{columnsep}{topmargin}{headheight}{headsep}{footskip}
+	\addcontentsline{toc}{chapter}{Abstract}
+	\pagenumbering{roman}
+	\setcounter{page}{1}
+	\input{text/abstract}
+	\cleardoublepage
+	\changepage{}{-1.0cm}{0.5cm}{0.5cm}{}{}{}{}{} %\changepage{textheight}{textwidth}{evensidemargin}{oddsidemargin}{columnsep}{topmargin}{headheight}{headsep}{footskip}
+
+\chapter*{Acknowledgements}
+	\addcontentsline{toc}{chapter}{Acknowledgements}
+	\input{text/acknowledgements}
+	\cleardoublepage
+
+\addcontentsline{toc}{chapter}{Table of Contents}
+\tableofcontents
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\addcontentsline{toc}{chapter}{List of Tables}
+\listoftables
+
+\chapter*{List of Abbreviations}
+	\small
+	\changepage{}{1.0cm}{-0.5cm}{-0.5cm}{}{}{}{}{} %\changepage{textheight}{textwidth}{evensidemargin}{oddsidemargin}{columnsep}{topmargin}{headheight}{headsep}{footskip}
+	\addcontentsline{toc}{chapter}{List of Abbreviations}
+	\input{text/abbreviations}
+	\changepage{}{-1.0cm}{0.5cm}{0.5cm}{}{}{}{}{} %\changepage{textheight}{textwidth}{evensidemargin}{oddsidemargin}{columnsep}{topmargin}{headheight}{headsep}{footskip}
+	\normalsize
+
+\cleardoublepage
+
+\pagestyle{fancy}
+\fancyhead[R]{}
+
+\chapter{Introduction}
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+	
+	% motivations
+	\input{text/introduction/intro}
+	
+	\clearpage
+	
+	\section{Goals}
+	
+		% thesis goals
+		\input{text/introduction/goals}
+		
+	\section{Contributions}
+	
+		% thesis contributions
+		\input{text/introduction/contributions}
+	
+	\section{Thesis Outline}
+	
+		\input{text/introduction/outline}
+	
+\chapter{3D Ultrasonography}
+	\label{chapter:3d_ultrasonography}
+		
+	\input{text/3d_ultrasonography/intro}
+	
+	\section{Medical Ultrasound}
+	
+		% about 3D ultrasound used in medicine
+		\input{text/3d_ultrasonography/medical_ultrasound}
+		
+	\section{Tracking in Ultrasound}
+	
+		\input{text/3d_ultrasonography/tracking}
+	
+	\section{3D Ultrasound Reconstruction}
+		\label{section:ultrasound_reconstruction}
+	
+		\input{text/3d_ultrasonography/reconstruction}
+		
+	\section{3D Ultrasound Visualization}
+		\label{section:ultrasound_visualization}
+	
+		\input{text/3d_ultrasonography/visualization}
+		
+	\section{Previous Work on 3D Ultrasound Reconstruction}
+
+		% presentation of important previous work in the field including that which this thesis directly builds upon in the form of a consequtive text with cites
+		\input{text/3d_ultrasonography/related_work}
+		
+\chapter{General Purpose Computations on GPUs}
+	\label{chapter:gpgpu}
+
+	\input{text/gpgpu/intro}
+	
+	\section{GPGPU Computing}
+	
+		% about GPGPUs history and current state
+		\input{text/gpgpu/history_current_state}
+
+	\section{OpenCL}
+	
+		% about OpenCL
+		\input{text/gpgpu/opencl}
+
+\chapter{Fast Reconstruction on the GPU}
+	\label{chapter:gpu_reconstruction}
+	
+	\input{text/non-incremental/intro}
+	
+	\section{Preprocessing of Input Data}
+	
+		% description of input interpolation and calibration
+		\input{text/non-incremental/preprocessing}
+	
+	\section{Pixel-Based Reconstruction}
+		\label{section:non-incremental_pnn}
+	
+		% description of how PNN reconstruction on the GPU was done in this thesis
+		\input{text/non-incremental/pixel-based}
+	
+	\section{Voxel-Based Reconstruction}
+		\label{section:non-incremental_vnn}
+	
+		% description of how VNN reconstruction on the GPU was done in this thesis
+		\input{text/non-incremental/voxel-based}
+	
+\chapter{Real-Time Incremental Reconstruction and Visualization}
+	\label{chapter:incremental_reconstruction_visualization}
+	
+	\input{text/incremental_visualization/intro}
+	
+	\section{Incremental Acquisition and Preprocessing of Input data}
+		
+		% description of waiting for b-scan and tracking data and interpolating the latter, plus calibration
+		\input{text/incremental_visualization/incremental_preprocessing}
+	
+	\section{Incremental PNN Reconstruction}
+	
+		% description of how simple PNN is performed incrementally in real-time on the GPU
+		\input{text/incremental_visualization/incremental_pnn}
+	
+	\section{High-Quality Incremental Reconstruction}
+		\label{section:incremental_hq}
+	
+		% description how incremental high-quality reconstruction in real-time on the GPU is done
+		\input{text/incremental_visualization/incremental_hq}
+	
+	\section{Simultaneous Reconstruction and Visualization}
+		\label{section:reconstruction_visualization}
+
+		% description of how the volume was visualized, and how simultaneous recosntruction and visualization was done on the GPU
+		\input{text/incremental_visualization/visualization}
+	
+\chapter{Analysis and Discussion of our Results}
+	\label{chapter:results_discussion}
+	
+	\input{text/results_discussion/intro}
+		
+	\section{Performance}
+	
+		\input{text/results_discussion/performance}
+		
+	\section{Reconstruction Quality}
+	
+		\input{text/results_discussion/quality}
+		
+	\section{General Discussion}
+		
+		\input{text/results_discussion/general}
+		
+	%\section{Scaling and Resource Use}
+	%	\label{scaling_resource}
+		
+	%	\input{text/results_discussion/scaling_resource}
+
+\chapter{Conclusions and Future Work}
+	\label{chapter:conclusion_future_work}
+	
+		\input{text/conclusion_future_work/intro}
+
+	\section{Conclusions}
+		\input{text/conclusion_future_work/conclusion}
+		
+	\section{Future Work}
+		\label{section:future_work}
+		\input{text/conclusion_future_work/future_work}
+		
+	\section{Final Thoughts}
+		\label{section:final_thoughts}
+		\input{text/conclusion_future_work/final_thoughts}
+
+\bibliographystyle{acm}
+\cleardoublepage
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliography{literature}
+
+\appendix
+
+\chapter{Annotated Bibliography}
+	\label{chapter:annotated_bib}
+	
+	\input{text/appendix/annotated_bib}
+
+\cleardoublepage
+%\setlength{\hoffset}{0cm}
+%\setlength{\marginparwidth}{0cm}
+%\setlength{\marginparsep}{0cm}
+ %\addtolength{\headwidth}{3cm}
+%\addtolength{\footwidth}{3cm}
+ %\addtolength{\oddsidemargin}{-1.5cm}
+ %\addtolength{\evensidemargin}{-1.5cm}
+%\addtolength{\rightmargin}{-1cm}
+%\addtolength{\leftmargin}{-1cm}
+ %\addtolength{\textwidth}{3cm}
+%\addtolength{\paperwidth}{3cm}
+\addtolength{\topmargin}{-1cm}
+\addtolength{\textheight}{2cm}
+
+\chapter{Large Figures}
+	\label{chapter:large_figures}
+	
+	\input{text/appendix/large_figures}
+	
+\cleardoublepage
+	
+\addtolength{\topmargin}{1cm}
+\addtolength{\textheight}{-2cm}
+
+\chapter{Poster}
+	\label{chapter:poster}
+	
+	On the next page, one can find a poster from this thesis with focus on the incremental reconstruction. The poster summarizes the main principles of the methods and the most important results.
+	
+	\includepdf[pages={1}]{text/appendix/poster.pdf}
+	
+\chapter{Additional Test Measurements}
+	\label{chapter:test_measurements}
+	
+	On the next page, one can find additional numerical measurements taken during testing. These include performance speedups of C2050 compared to CPU and FX5800, and of HD5870 compared to FX5800, as well as core occupancy numbers, register use and global read and write throughput on the GPU.
+	
+	\includepdf[pages={1}]{text/appendix/test_results.pdf}
+	
+\chapter{Real-Time Ray Tracing Using Nvidia OptiX}
+	\label{chapter:optix_paper}
+	
+	On the next pages, the paper \textit{Real-Time Ray Tracing Using Nvidia OptiX} \cite{ludvigsen2010} is included. This paper was written by this thesis' authors about their experience with Nvidia's OptiX library for GPU ray tracing. An implementation of volume casting was included as an example of the capabilities of OptiX, and Figure \ref{fig:ray_casting} in this thesis was generated from this implementation.
+	
+	The paper was submitted to and accepted by the 2010 Eurographics conference where the authors held a presentation.
+	
+	\includepdf[pages={1,2,3,4}]{text/appendix/optix_paper.pdf}
+	
+\chapter{Code Listings}
+	\label{chapter:code_listings}
+	
+	\lstset{numbers=left,language=C,breaklines=true,basicstyle=\footnotesize}
+	
+	In this appendix, one can find code listings from the most important parts of the implementation made for this thesis.
+	
+	\section{Pixel-Nearest-Neighbor Kernels}
+		\label{section:pnn_kernel}
+	
+		The following code listing contains the kernels for pixel-nearest-neighbor reconstruction as described in Section \ref{section:non-incremental_pnn}.
+	
+		\lstinputlisting{text/appendix/pnn_kernels.ocl}
+	
+	\section{Voxel-Nearest-Neighbor Kernel}
+		\label{section:vnn_kernel}
+	
+		The following code listing is the kernel for voxel-nearest-neighbor reconstruction as described in Section \ref{section:non-incremental_vnn}.
+	
+		\lstinputlisting{text/appendix/vnn_kernel.ocl}
+		
+	\section{Ray Casting Kernels}
+		\label{section:ray_casting_kernel}
+	
+		The following code listing contains the kernels for ray casting as described in Section \ref{section:reconstruction_visualization}.
+	
+		\lstinputlisting{text/appendix/ray_casting_kernels.ocl}
+		
+	\section{Incremental Reconstruction Kernels}
+		\label{section:incremental_kernel}
+	
+		The following code listing contains the kernels for incremental reconstruction with PT and DWOP as described in Section \ref{section:incremental_hq}.
+	
+		\lstinputlisting{text/appendix/incremental_kernels.ocl}
+
+%\cleardoublepage
+%\newpage
+%\thispagestyle{empty}
+%\mbox{}
+%\includepdf[pages={2}]{graphics/cover.pdf}
+
+\end{document}

@@ -1,0 +1,26 @@
+There are many possible avenues to investigate further. Here are some suggestions:
+
+% Make PNN use less memory with transformed corner points and ad-hoc pixel coordinate calculations
+\subsubsection{Reduce device memory required for PNN}
+
+	Older or low-budget GPUs do not have the amount of device memory required for some of the reconstruction methods presented in this thesis. Also, for a mobile system, one can imagine GPUs in handheld devices with small memory sizes being used for the reconstruction. The PNN method as described here requires a total of 719 MB, and this is impossible or difficult to fit on GPUs with 512 or 768 MB of total memory (that may also be used by other applications). Although memory use can be reduced by a smaller problem size, it is also desirable to reduce the requirements of the algorithm itself. Most of the memory used by the PNN is for the three-dimensional coordinates of each pixel. This can be optimized by calculating these coordinates only when needed. Given a reference point for each b-scan in addition to its plane equation and given pixel spacings, it is possible to calculate the coordinates of any pixel on that b-scan. This could reduce the memory needed by as much as 59 \% for the PNN method of reconstruction.
+
+% Make it unnecessary to assume volume dimension in incremental reconstruction
+\subsubsection{Dynamic volume allocation and orientation}
+
+	Currently, the volume extents and orientation are predefined before reconstruction, and data acquired outside of this is disregarded. A dynamic volume allocation technique could be devised and implemented, such that the volume is increased (and perhaps also reduced) according to needs. If feasible on a performance basis, one could even rotate the volume such that the scanned data always fits optimally.
+
+% Make up alternative to sending whole volume for each increment
+\subsubsection{Reducing the device-to-host transfer bottleneck}
+
+	The main bottleneck with incremental reconstruction is the transfer of the volume from the device to host. Solutions for reducing the bandwidth needed for this could be devised and implemented. Incremental PNN without hole filling already employs a simple scheme for sending only the relevant data from device to host for each increment, but this is more complex when using the high-quality incremental methods as presented in this thesis. It should however be possible to design an efficient technique for sending only the required data for each increment, which is an amount substantially smaller than the entire volume.
+	
+% Handle U-turn scanning
+\subsubsection{Handle U-turn scanning}
+
+	When scanning, the probe can be moved in a U-turn. This is problematic for the voxel-based reconstruction because the b-scans are modeled with plane equations that stretch infinitely out. The voxels that belong to one arm of the U might find that b-scans in the other arm are closer (according to the plane equations). When the ROI is then investigated, it will be concluded that the voxel is outside the ROI of the b-scan from the other arm even though it might be inside the ROI of a b-scan from the closest arm. These challenges should be addressed and solved.
+	
+% Dynamic adaptation to low-memory GPUs
+\subsubsection{Dynamic adaptation of memory allocation}
+
+	As mentioned above, some GPUs do not have enough memory for some of the data buffers used in reconstruction as described in this thesis. Furthermore, even though the total memory is enough, there are often restrictions on how much of the memory that can be allocated for a single buffer. The solution is to split up the input and output data, and process them in smaller pieces. To allow for portability of the system, the splitting should be handled automatically according to the capabilities of the installed GPU. Such an automatic system needs to allocate buffers of the right sizes, communicate to the GPU kernels what parts of memory they are to read from and write to, and merge together the output pieces.

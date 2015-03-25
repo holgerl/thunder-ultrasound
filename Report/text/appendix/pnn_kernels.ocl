@@ -1,0 +1,156 @@
+_kernel void round_off_translate(__global float * pixel_pos0,
+                                  __global float * pixel_pos1,
+                                  __global float * pixel_pos2,
+                                  __global float * pixel_pos3,
+                                  __global float * pixel_pos4,
+                                  __global float * pixel_pos5,
+                                  float volume_spacing,
+                                  int mask_size,
+                                  float origo_x,
+                                  float origo_y,
+                                  float origo_z,
+                                  int bscan_n) {
+  int n = get_global_id(0);
+  if (n >= bscan_n*mask_size) return;
+
+  int a = n/mask_size;
+  int i = n%mask_size;
+
+  __global float * pixel_pos[6] = {pixel_pos0, pixel_pos1, pixel_pos2, pixel_pos3, pixel_pos4, pixel_pos5};
+
+  pixel_pos_c(a,i,0) = (int)((pixel_pos_c(a,i,0)-origo_x)/volume_spacing);
+  pixel_pos_c(a,i,1) = (int)((pixel_pos_c(a,i,1)-origo_y)/volume_spacing);
+  pixel_pos_c(a,i,2) = (int)((pixel_pos_c(a,i,2)-origo_z)/volume_spacing);
+}
+
+__kernel void fill_volume(__global float * pixel_pos0,
+                          __global float * pixel_pos1,
+                          __global float * pixel_pos2,
+                          __global float * pixel_pos3,
+                          __global float * pixel_pos4,
+                          __global float * pixel_pos5,
+                          __global unsigned char * pixel_ill,
+                          int mask_size,
+                          __global unsigned char * volume,
+                          int volume_n,
+                          int volume_h,
+                          int volume_w,
+                          int bscan_n) {
+
+  int n = get_global_id(0);
+  if (n > bscan_n*mask_size) return;
+  
+  int a = n/mask_size;
+  int i = n%mask_size;
+  
+  __global float * pixel_pos[6] = {pixel_pos0, pixel_pos1, pixel_pos2, pixel_pos3, pixel_pos4, pixel_pos5};
+
+  int x = pixel_pos_c(a,i,0);
+  int y = pixel_pos_c(a,i,1);
+  int z = pixel_pos_c(a,i,2);
+  if (inrange(x,0,volume_w) && inrange(y,0,volume_h) && inrange(z,0,volume_n))
+    volume_a(x,y,z) = pixel_ill[a*mask_size + i];
+}
+
+__kernel void transform(__global float * pixel_pos0,
+                        __global float * pixel_pos1,
+                        __global float * pixel_pos2,
+                        __global float * pixel_pos3,
+                        __global float * pixel_pos4,
+                        __global float * pixel_pos5,
+                        __global float * pos_matrices,
+                        int mask_size,
+                        int bscan_n) {
+  int n = get_global_id(0);
+  if (n >= bscan_n*mask_size) return;
+
+  int a = n/mask_size;
+  int i = n%mask_size;
+
+  __global float * pixel_pos[6] = {pixel_pos0, pixel_pos1, pixel_pos2, pixel_pos3, pixel_pos4, pixel_pos5};
+
+  float sum0, sum1, sum2;
+  for (int y = 0; y < 3; y++) {
+    float sum = 0;
+    for (int x = 0; x < 3; x++) 
+      sum += pos_matrices_a(a,x,y)*pixel_pos_c(a,i,x);
+    sum += pos_matrices_a(a,3,y);
+    if (y==0) sum0=sum; else if (y==1) sum1=sum; else sum2=sum;
+  }
+  pixel_pos_c(a,i,0) = sum0; pixel_pos_c(a,i,1) = sum1; pixel_pos_c(a,i,2) = sum2;
+}
+
+__kernel void fill_pixel_ill_pos(__global unsigned char * bscans0,
+                                 __global unsigned char * bscans1,
+                                 __constant unsigned char * mask,
+                                 __global float * pixel_pos0,
+                                 __global float * pixel_pos1,
+                                 __global float * pixel_pos2,
+                                 __global float * pixel_pos3,
+                                 __global float * pixel_pos4,
+                                 __global float * pixel_pos5,
+                                 __global unsigned char * pixel_ill,
+                                 int mask_size,
+                                 int bscan_n,
+                                 int bscan_h,
+                                 int bscan_w,
+                                 float bscan_spacing_x,
+                                 float bscan_spacing_y) {
+
+  int n = get_global_id(0);
+  if (n >= bscan_n) return;
+
+  __global float * pixel_pos[6] = {pixel_pos0, pixel_pos1, pixel_pos2, pixel_pos3, pixel_pos4, pixel_pos5};
+
+  int mask_counter = 0;
+  unsigned char foo;
+  unsigned char mask_bit;
+  unsigned char ill;
+  for (int y = 0; y < bscan_h; y++) {
+    for (int x = 0; x < bscan_w; x++) {
+      foo = 1 << (y*bscan_w + x)%8;
+      mask_bit = mask[(x + y*bscan_w)/8] & foo;
+      if (mask_bit != 0) {
+        if (n < bscan_n/2) {
+          ill = bscans0[x + y*bscan_w + n*bscan_w*bscan_h];
+        } else {
+          ill = bscans1[x + y*bscan_w + (n-bscan_n/2)*bscan_w*bscan_h];
+        }
+        pixel_ill[n*mask_size + mask_counter] = ill;
+        pixel_pos_c(n,mask_counter,0) = 0;
+        pixel_pos_c(n,mask_counter,1) = x*bscan_spacing_x;
+        pixel_pos_c(n,mask_counter,2) = y*bscan_spacing_y;
+        mask_counter++;
+      }
+    }
+  }
+}
+
+__kernel void fill_holes(__global unsigned char * volume,
+                         int volume_n,
+                         int volume_h,
+                         int volume_w) {
+  #define kernel_size 5
+  #define half_kernel (kernel_size/2)
+  #define cutoff (kernel_size*kernel_size*kernel_size/2.0f - half_kernel)
+
+  int n = get_global_id(0);
+
+  int z = n/(volume_h*volume_w) + half_kernel;
+  int y = (n/volume_w)%volume_h + half_kernel;
+  int x = n%volume_w + half_kernel;
+  if (z >= volume_n-half_kernel || y >= volume_h-half_kernel || x >= volume_w-half_kernel) return;
+
+  if (volume_a(x,y,z) == 0) {
+    int sum = 0;
+    int sum_counter = 0;
+    for(int i = -half_kernel; i <= half_kernel; i++)
+      for(int j = -half_kernel; j <= half_kernel; j++)
+        for(int k = -half_kernel; k <= half_kernel; k++)
+          if (volume_a(x+i,y+j,z+k) != 0) {
+            sum += volume_a(x+i,y+j,z+k);
+            sum_counter++;
+          }
+    if (sum_counter > cutoff && sum/(float)sum_counter <= 255) volume_a(x,y,z) = sum/(float)sum_counter;
+  }
+}

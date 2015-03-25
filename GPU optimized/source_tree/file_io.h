@@ -1,0 +1,2 @@
+void read_input(const char * mhd_filename, const char * pos_filename, const char * tim_filename, const char * msk_filename, const char * vol_filename, const char * cal_filename);
+void write_output(const char * filename);

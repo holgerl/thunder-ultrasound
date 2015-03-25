@@ -1,0 +1,12 @@
+NDims = 3
+DimSize = 768 576 60
+ElementSpacing = 0.107724 0.111732 1
+Position = 0 0 0
+ElementByteOrderMSB = 0
+ElementType = MET_UCHAR
+HeaderSize = -1
+ElementDataFile = ultrasoundSample5.vol
+SectorAngle(degrees) = 0
+SectorVerticalOffset(pixels) = 102.4
+SectorHorizontalOffset(pixels) = 7.68
+SectorDepth(cm) = 5
