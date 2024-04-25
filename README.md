@@ -1,4 +1,7 @@
-# thunder-ultrasound
+# Thunder Ultrasound
+## Real-Time GPU-Based 3D Ultrasound Reconstruction and Visualization
+
+Academic report: https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/252302
 
 https://www.youtube.com/watch?v=ok-gkPKjbq8
 
