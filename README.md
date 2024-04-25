@@ -3,7 +3,7 @@
 
 Academic report: https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/252302
 
-https://www.youtube.com/watch?v=ok-gkPKjbq8
+Video of results: https://www.youtube.com/watch?v=ok-gkPKjbq8
 
 Current CPU-based methods for 3D ultrasound reconstruction are time consuming (typically from 1 minute to 1 hour depending on the quality). The overall goal of this project is to use GPU-based techniques to achieve real-time (or close to real-time) reconstruction and visualization of ultrasound.
 
